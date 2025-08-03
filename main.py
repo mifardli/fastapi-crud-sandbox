@@ -1,68 +1,37 @@
 from fastapi import FastAPI
+from sqlmodel import SQLModel, Field, Session, select
+from typing import Optional
+from database import engine, create_db_and_tables
+#Inisiasi FastAPI
 app = FastAPI()
 
-@app.get("/")
-def hello_bocil():
-    return {"pesan":"Halo dunia! Ini backend bocil aktif cuy 🚀"}
+#Model tabel dummy SPI
+class DataSPI(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    tanggal: str
+    lokasi: str
+    nilai_spi: float
 
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+#Auto create DB pas server nyala
+@app.on_event("startup")
+def on_startup():
+    create_db_and_tables()
 
-app = FastAPI()
-
-tugas_list = [
-    {"id": 1, "judul":"Belajar backend", "status":"belum"},
-    {"id":2, "judul":"Sholat maghrib", "status":"sudah"}
-
-]
-
-next_id = 3
-
-@app.get("/tugas")
-def get_semua_tugas():
-    return {"data": tugas_list}
-
-@app.get("/tugas/{tugas_id}")
-def get_tugas_by_id(tugas_id: int):
-    for tugas in tugas_list:
-        if tugas["id"] == tugas_id:
-            return {"data": tugas}
-    raise HTTPException(status_code=404, detail="Tugas tidak ditemukan")
-
-class TugasBaru(BaseModel):
-    judul: str
-    status: str
-
-@app.post("/tugas")
-def tambah_tugas(tugas: TugasBaru):
-    global next_id
-    new_tugas = {
-        "id": next_id,
-        "judul": tugas.judul,
-        "status": tugas.status
-
-    }
-    tugas_list.append(new_tugas)
-    next_id += 1
-    return {"pesan": "Tugas berhasil ditambahkan", "data":new_tugas}
-
-class EditTugas(BaseModel):
-    judul: str
-    status: str
-
-@app.put("/tugas/{tugas_id}")
-def edit_tugas(tugas_id: int, tugas: EditTugas):
-    for t in tugas_list:
-        if t["id"] == tugas_id:
-            t["judul"] = tugas.judul
-            t["status"] = tugas.status
-            return {"pesan": "Tugas berhasil diubah", "data": t}
-    raise HTTPException(status_code=404, detail="Tugas tidak ditemukan")
-@app.delete("/tugas/{tugas_id}")
-def hapus_tugas(tugas_id: int):
-    for i, t in enumerate(tugas_list):
-        if t["id"] == tugas_id:
-            del tugas_list[i]
-            return {"pesan": "Tugas berhasil dihapus"}
-        raise HTTPException(status_code=404, detaail="tugas tidak ditemukan")
+# Endpoint POST -> tambah data
+@app.post("/spi/")
+def tambah_data_spi(data: DataSPI):
+    with Session(engine) as session:
+        session.add(data)
+        session.commit()
+        session.refresh(data)
+        return data
+    
+# Endpoint GET -> ambil semua data
+@app.get("/spi/")
+def ambil_data_spi():
+    with Session(engine) as session:
+        statement = select(DataSPI)
+        hasil = session.exec(statement).all()
+        return hasil
+    
     
