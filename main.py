@@ -34,4 +34,26 @@ def ambil_data_spi():
         hasil = session.exec(statement).all()
         return hasil
     
-    
+
+# Endpoint GET -> FIlter data
+@app.get("/spi/filter")
+def filter_spi(
+    lokasi: Optional[str] = None,
+    tanggal: Optional[str] = None,
+    min_spi: Optional[str] = None,
+    max_spi: Optional[str] = None
+):
+    with Session(engine) as session:
+        statement = select(DataSPI)
+        
+        if lokasi: 
+            statement = statement.where(DataSPI.lokasi == lokasi)
+        if tanggal:
+            statement = statement.where(DataSPI.tanggal == tanggal)
+        if min_spi is not None:
+            statement = statement.where(DataSPI.nilai_spi >= min_spi)
+        if max_spi is not None:
+            statement = statement.where(DataSPI.nilai_spi <= max_spi)
+        
+        hasil = session.exec(statement).all()
+        return hasil
