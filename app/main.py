@@ -1,6 +1,6 @@
 from fastapi import FastAPI
-from app.routers.spi import router as spi_router
-from app.database.connection import create_db_and_tables
+from app.routers import lingkungan_router
+from app.database.db import create_db_and_tables
 
 app = FastAPI()
 
@@ -9,4 +9,4 @@ def startup():
     create_db_and_tables()
 
 # Include endpoint SPI
-app.include_router(spi_router)
+app.include_router(lingkungan_router.router)
